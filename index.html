@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QuickBite – Food Delivery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+
+    <!-- ========== CONFETTI CANVAS ========== -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- ========== SCREEN 1: MENU ========== -->
+    <div class="screen" id="screen-menu">
+      <!-- Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <div class="header-logo">🍔 QuickBite</div>
+          <div class="header-location">
+            <span class="location-icon">📍</span>
+            <span>Lagos, Nigeria</span>
+          </div>
+        </div>
+        <div class="header-cart" id="header-cart" onclick="scrollToCart()">
+          🛒 <span class="cart-badge" id="cart-badge">0</span>
+        </div>
+      </header>
+
+      <!-- Hero banner -->
+      <div class="hero-banner">
+        <div class="hero-text">
+          <p class="hero-tag">🔥 Hot deals today</p>
+          <h1 class="hero-title">Hungry?<br/>We've got you.</h1>
+          <p class="hero-sub">Fresh food. Fast delivery. Every time.</p>
+        </div>
+        <div class="hero-graphic">🍕</div>
+      </div>
+
+      <!-- Menu section -->
+      <section class="section">
+        <div class="section-header">
+          <h2 class="section-title">🍽️ Today's Menu</h2>
+          <p class="section-sub">From Mama's Kitchen • 4.8 ⭐ • 1.2km away</p>
+        </div>
+
+        <div class="menu-grid" id="menu-grid">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- Cart section -->
+      <section class="section" id="cart-section">
+        <h2 class="section-title">🛒 Your Order</h2>
+
+        <div class="cart-empty hidden" id="cart-empty">
+          <p>No items yet. Add something delicious above! 👆</p>
+        </div>
+
+        <ul class="cart-list" id="cart-list">
+          <!-- Populated by JS -->
+        </ul>
+
+        <div class="cart-summary hidden" id="cart-summary">
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <span id="subtotal">₦0</span>
+          </div>
+          <div class="summary-row">
+            <span>Delivery fee</span>
+            <span>₦500</span>
+          </div>
+          <div class="summary-row summary-total">
+            <span>Total</span>
+            <span id="total">₦0</span>
+          </div>
+          <button class="btn-place-order" id="btn-place-order" onclick="placeOrder()">
+            Place Order 🚀
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ========== SCREEN 2: TRACKING ========== -->
+    <div class="screen hidden" id="screen-tracking">
+
+      <header class="app-header app-header--dark">
+        <div class="header-logo">🍔 QuickBite</div>
+        <div class="tracking-badge">LIVE</div>
+      </header>
+
+      <!-- Order confirmed banner -->
+      <div class="confirmed-banner">
+        <div class="confirmed-icon" id="confirmed-icon">✅</div>
+        <div>
+          <h2 class="confirmed-title" id="confirmed-title">Order Confirmed!</h2>
+          <p class="confirmed-sub" id="confirmed-sub">Mama's Kitchen is preparing your food</p>
+        </div>
+      </div>
+
+      <!-- Countdown timer -->
+      <div class="timer-section">
+        <p class="timer-label">Estimated arrival in</p>
+        <div class="timer-display" id="timer-display">
+          <span class="timer-num" id="timer-mins">25</span>
+          <span class="timer-colon">:</span>
+          <span class="timer-num" id="timer-secs">00</span>
+        </div>
+        <p class="timer-sub" id="timer-sub">minutes remaining</p>
+      </div>
+
+      <!-- Status stages -->
+      <div class="stages-wrap">
+        <div class="stage" id="stage-0">
+          <div class="stage-dot"></div>
+          <div class="stage-info">
+            <span class="stage-name">Order Placed</span>
+            <span class="stage-time" id="stage-time-0"></span>
+          </div>
+          <div class="stage-line"></div>
+        </div>
+        <div class="stage" id="stage-1">
+          <div class="stage-dot"></div>
+          <div class="stage-info">
+            <span class="stage-name">Being Prepared</span>
+            <span class="stage-time" id="stage-time-1"></span>
+          </div>
+          <div class="stage-line"></div>
+        </div>
+        <div class="stage" id="stage-2">
+          <div class="stage-dot"></div>
+          <div class="stage-info">
+            <span class="stage-name">Out for Delivery</span>
+            <span class="stage-time" id="stage-time-2"></span>
+          </div>
+          <div class="stage-line"></div>
+        </div>
+        <div class="stage" id="stage-3">
+          <div class="stage-dot"></div>
+          <div class="stage-info">
+            <span class="stage-name">Arrived! 🎉</span>
+            <span class="stage-time" id="stage-time-3"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map visual -->
+      <div class="map-wrap">
+        <div class="map-bg">
+          <div class="map-road map-road--h"></div>
+          <div class="map-road map-road--v"></div>
+          <div class="map-road map-road--h2"></div>
+          <div class="map-road map-road--v2"></div>
+          <div class="map-restaurant" title="Mama's Kitchen">🏪</div>
+          <div class="map-home" title="Your location">🏠</div>
+          <div class="map-rider" id="map-rider">🛵</div>
+          <div class="map-route" id="map-route"></div>
+        </div>
+        <p class="map-label">Rider is on the way to you</p>
+      </div>
+
+      <!-- Order summary mini -->
+      <div class="order-mini">
+        <p class="order-mini__title">Your order from Mama's Kitchen</p>
+        <ul class="order-mini__list" id="order-mini-list">
+          <!-- Populated by JS -->
+        </ul>
+        <div class="order-mini__total">
+          Total: <strong id="order-mini-total">₦0</strong>
+        </div>
+      </div>
+
+      <!-- Arrived overlay -->
+      <div class="arrived-overlay hidden" id="arrived-overlay">
+        <div class="arrived-card">
+          <div class="arrived-emoji">🎉</div>
+          <h2 class="arrived-title">Your food is here!</h2>
+          <p class="arrived-sub">Enjoy your meal, Precious! 😋</p>
+          <div class="arrived-items" id="arrived-items"></div>
+          <button class="btn-new-order" onclick="newOrder()">Order Again 🔁</button>
+        </div>
+      </div>
+
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
