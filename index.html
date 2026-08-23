@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="style.css" />
+    <!-- Paystack inline JS SDK -->
+    <script src="https://js.paystack.co/v1/inline.js"></script>
   </head>
   <body>
 
@@ -16,7 +18,6 @@
 
     <!-- ========== SCREEN 1: MENU ========== -->
     <div class="screen" id="screen-menu">
-      <!-- Header -->
       <header class="app-header">
         <div class="header-left">
           <div class="header-logo">🍔 QuickBite</div>
@@ -30,7 +31,6 @@
         </div>
       </header>
 
-      <!-- Hero banner -->
       <div class="hero-banner">
         <div class="hero-text">
           <p class="hero-tag">🔥 Hot deals today</p>
@@ -40,30 +40,20 @@
         <div class="hero-graphic">🍕</div>
       </div>
 
-      <!-- Menu section -->
       <section class="section">
         <div class="section-header">
           <h2 class="section-title">🍽️ Today's Menu</h2>
-          <p class="section-sub">From Mama's Kitchen • 4.8 ⭐ • 1.2km away</p>
+          <p class="section-sub">From Legend's Kitchen • 4.8 ⭐ • 1.2km away</p>
         </div>
-
-        <div class="menu-grid" id="menu-grid">
-          <!-- Populated by JS -->
-        </div>
+        <div class="menu-grid" id="menu-grid"></div>
       </section>
 
-      <!-- Cart section -->
       <section class="section" id="cart-section">
         <h2 class="section-title">🛒 Your Order</h2>
-
         <div class="cart-empty hidden" id="cart-empty">
           <p>No items yet. Add something delicious above! 👆</p>
         </div>
-
-        <ul class="cart-list" id="cart-list">
-          <!-- Populated by JS -->
-        </ul>
-
+        <ul class="cart-list" id="cart-list"></ul>
         <div class="cart-summary hidden" id="cart-summary">
           <div class="summary-row">
             <span>Subtotal</span>
@@ -77,8 +67,8 @@
             <span>Total</span>
             <span id="total">₦0</span>
           </div>
-          <button class="btn-place-order" id="btn-place-order" onclick="placeOrder()">
-            Place Order 🚀
+          <button class="btn-place-order" id="btn-place-order" onclick="initiatePayment()">
+            Place Order & Pay 💳
           </button>
         </div>
       </section>
@@ -92,16 +82,14 @@
         <div class="tracking-badge">LIVE</div>
       </header>
 
-      <!-- Order confirmed banner -->
       <div class="confirmed-banner">
         <div class="confirmed-icon" id="confirmed-icon">✅</div>
         <div>
           <h2 class="confirmed-title" id="confirmed-title">Order Confirmed!</h2>
-          <p class="confirmed-sub" id="confirmed-sub">Mama's Kitchen is preparing your food</p>
+          <p class="confirmed-sub" id="confirmed-sub">Legend's Kitchen is preparing your food</p>
         </div>
       </div>
 
-      <!-- Countdown timer -->
       <div class="timer-section">
         <p class="timer-label">Estimated arrival in</p>
         <div class="timer-display" id="timer-display">
@@ -112,7 +100,6 @@
         <p class="timer-sub" id="timer-sub">minutes remaining</p>
       </div>
 
-      <!-- Status stages -->
       <div class="stages-wrap">
         <div class="stage" id="stage-0">
           <div class="stage-dot"></div>
@@ -147,43 +134,52 @@
         </div>
       </div>
 
-      <!-- Map visual -->
       <div class="map-wrap">
         <div class="map-bg">
           <div class="map-road map-road--h"></div>
           <div class="map-road map-road--v"></div>
           <div class="map-road map-road--h2"></div>
           <div class="map-road map-road--v2"></div>
-          <div class="map-restaurant" title="Mama's Kitchen">🏪</div>
+          <div class="map-restaurant" title="Legend's Kitchen">🏪</div>
           <div class="map-home" title="Your location">🏠</div>
           <div class="map-rider" id="map-rider">🛵</div>
-          <div class="map-route" id="map-route"></div>
         </div>
         <p class="map-label">Rider is on the way to you</p>
       </div>
 
-      <!-- Order summary mini -->
       <div class="order-mini">
-        <p class="order-mini__title">Your order from Mama's Kitchen</p>
-        <ul class="order-mini__list" id="order-mini-list">
-          <!-- Populated by JS -->
-        </ul>
+        <p class="order-mini__title">Your order from Legend's Kitchen</p>
+        <ul class="order-mini__list" id="order-mini-list"></ul>
         <div class="order-mini__total">
           Total: <strong id="order-mini-total">₦0</strong>
         </div>
       </div>
 
-      <!-- Arrived overlay -->
       <div class="arrived-overlay hidden" id="arrived-overlay">
         <div class="arrived-card">
           <div class="arrived-emoji">🎉</div>
           <h2 class="arrived-title">Your food is here!</h2>
-          <p class="arrived-sub">Enjoy your meal, Precious! 😋</p>
+          <p class="arrived-sub">Enjoy your meal! 😋</p>
           <div class="arrived-items" id="arrived-items"></div>
           <button class="btn-new-order" onclick="newOrder()">Order Again 🔁</button>
         </div>
       </div>
 
+    </div>
+
+    <!-- ========== PAYMENT PROCESSING OVERLAY ========== -->
+    <div class="pay-overlay hidden" id="pay-overlay">
+      <div class="pay-card">
+        <div class="pay-spinner"></div>
+        <p class="pay-title">Verifying Payment...</p>
+        <p class="pay-sub">Please wait while we confirm your transaction.</p>
+      </div>
+    </div>
+
+    <!-- ========== PAYMENT SUCCESS TOAST ========== -->
+    <div class="pay-toast hidden" id="pay-toast">
+      <span class="pay-toast__icon">✅</span>
+      <span id="pay-toast-msg">Payment successful! Redirecting...</span>
     </div>
 
     <script src="script.js"></script>
