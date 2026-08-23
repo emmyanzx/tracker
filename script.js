@@ -1,6 +1,6 @@
 /* =============================================
    QuickBite Delivery App — script.js
-   Features: menu, cart, order placement,
+   Features: menu, cart, Paystack payment,
    live countdown timer, status stages,
    rider map animation, confetti
    ============================================= */
@@ -8,69 +8,69 @@
 /* ─────────────────────────────────────────────
    1. DATA  (Arrays of Objects)
 ───────────────────────────────────────────── */
-
-// Menu items — each is an object with id, name, emoji, desc, price
 const menuItems = [
-  { id: 1, name: 'Jollof Rice',      emoji: '🍛', desc: 'Party-style smoky jollof',        price: 2500 },
-  { id: 2, name: 'Suya Wrap',        emoji: '🌯', desc: 'Spicy grilled beef in flatbread',  price: 1800 },
-  { id: 3, name: 'Pepper Soup',      emoji: '🍲', desc: 'Hot & spicy catfish bowl',         price: 2200 },
-  { id: 4, name: 'Fried Plantain',   emoji: '🍌', desc: 'Sweet golden dodo, crispy edges',  price: 800  },
-  { id: 5, name: 'Chicken Wings',    emoji: '🍗', desc: 'Sticky BBQ glazed wings',          price: 3000 },
-  { id: 6, name: 'Puff Puff',        emoji: '🟤', desc: 'Warm fluffy fried dough balls',    price: 600  },
-  { id: 7, name: 'Chapman Drink',    emoji: '🍹', desc: 'Chilled Nigerian classic cocktail',price: 900  },
-  { id: 8, name: 'Moi Moi',         emoji: '🟠', desc: 'Steamed bean pudding, soft & rich', price: 700  },
-];
-
-// Stage definitions — used for status tracking
-const stages = [
-  { id: 0, name: 'Order Placed',   triggerPct: 100 },  // active immediately
-  { id: 1, name: 'Being Prepared', triggerPct: 80  },  // activates at 80% elapsed
-  { id: 2, name: 'Out for Delivery',triggerPct: 45 },  // activates at 45% elapsed
-  { id: 3, name: 'Arrived!',       triggerPct: 0   },  // activates when time hits 0
+  { id: 1, name: 'Jollof Rice',    emoji: '🍛', desc: 'Party-style smoky jollof',         price: 2500 },
+  { id: 2, name: 'Suya Wrap',      emoji: '🌯', desc: 'Spicy grilled beef in flatbread',   price: 1800 },
+  { id: 3, name: 'Pepper Soup',    emoji: '🍲', desc: 'Hot & spicy catfish bowl',          price: 2200 },
+  { id: 4, name: 'Fried Plantain', emoji: '🍌', desc: 'Sweet golden dodo, crispy edges',   price: 800  },
+  { id: 5, name: 'Chicken Wings',  emoji: '🍗', desc: 'Sticky BBQ glazed wings',           price: 3000 },
+  { id: 6, name: 'Puff Puff',      emoji: '🟤', desc: 'Warm fluffy fried dough balls',     price: 600  },
+  { id: 7, name: 'Chapman Drink',  emoji: '🍹', desc: 'Chilled Nigerian classic cocktail', price: 900  },
+  { id: 8, name: 'Moi Moi',        emoji: '🟠', desc: 'Steamed bean pudding, soft & rich', price: 700  },
 ];
 
 /* ─────────────────────────────────────────────
-   2. STATE
+   2. PAYSTACK CONFIG
 ───────────────────────────────────────────── */
-let cart           = [];        // Array of { item, qty } objects
-let totalSeconds   = 0;         // Total delivery time in seconds
-let secondsLeft    = 0;         // Remaining seconds
-let timerInterval  = null;
-let currentStage   = 0;         // Index of active stage
-let orderTotal     = 0;
+const PAYSTACK_PUBLIC_KEY = 'pk_test_a241330f7ba08b39e3c8d6e3d0f0457f839d6380';
+const CUSTOMER_EMAIL      = 'uyamanny203@gmail.com';
+const CUSTOMER_NAME       = 'QuickBite Logistics';
+const CUSTOMER_PHONE      = '08100523937';
+
+/* ─────────────────────────────────────────────
+   3. STATE
+───────────────────────────────────────────── */
+let cart          = [];
+let totalSeconds  = 0;
+let secondsLeft   = 0;
+let timerInterval = null;
+let currentStage  = 0;
+let orderTotal    = 0;
 const DELIVERY_FEE = 500;
 
 /* ─────────────────────────────────────────────
-   3. DOM REFERENCES
+   4. DOM REFERENCES
 ───────────────────────────────────────────── */
-const screenMenu      = document.getElementById('screen-menu');
-const screenTracking  = document.getElementById('screen-tracking');
-const menuGrid        = document.getElementById('menu-grid');
-const cartList        = document.getElementById('cart-list');
-const cartEmpty       = document.getElementById('cart-empty');
-const cartSummary     = document.getElementById('cart-summary');
-const cartBadge       = document.getElementById('cart-badge');
-const subtotalEl      = document.getElementById('subtotal');
-const totalEl         = document.getElementById('total');
-const timerMins       = document.getElementById('timer-mins');
-const timerSecs       = document.getElementById('timer-secs');
-const timerSub        = document.getElementById('timer-sub');
-const mapRider        = document.getElementById('map-rider');
-const orderMiniList   = document.getElementById('order-mini-list');
-const orderMiniTotal  = document.getElementById('order-mini-total');
-const arrivedOverlay  = document.getElementById('arrived-overlay');
-const arrivedItems    = document.getElementById('arrived-items');
-const confirmedTitle  = document.getElementById('confirmed-title');
-const confirmedSub    = document.getElementById('confirmed-sub');
-const confettiCanvas  = document.getElementById('confetti-canvas');
+const screenMenu     = document.getElementById('screen-menu');
+const screenTracking = document.getElementById('screen-tracking');
+const menuGrid       = document.getElementById('menu-grid');
+const cartList       = document.getElementById('cart-list');
+const cartEmpty      = document.getElementById('cart-empty');
+const cartSummary    = document.getElementById('cart-summary');
+const cartBadge      = document.getElementById('cart-badge');
+const subtotalEl     = document.getElementById('subtotal');
+const totalEl        = document.getElementById('total');
+const timerMins      = document.getElementById('timer-mins');
+const timerSecs      = document.getElementById('timer-secs');
+const timerSub       = document.getElementById('timer-sub');
+const mapRider       = document.getElementById('map-rider');
+const orderMiniList  = document.getElementById('order-mini-list');
+const orderMiniTotal = document.getElementById('order-mini-total');
+const arrivedOverlay = document.getElementById('arrived-overlay');
+const arrivedItems   = document.getElementById('arrived-items');
+const confirmedTitle = document.getElementById('confirmed-title');
+const confirmedSub   = document.getElementById('confirmed-sub');
+const confettiCanvas = document.getElementById('confetti-canvas');
+const payOverlay     = document.getElementById('pay-overlay');
+const payToast       = document.getElementById('pay-toast');
+const payToastMsg    = document.getElementById('pay-toast-msg');
 
 /* ─────────────────────────────────────────────
-   4. RENDER MENU
+   5. RENDER MENU
 ───────────────────────────────────────────── */
 function renderMenu() {
   menuGrid.innerHTML = '';
 
-  // Loop through menuItems array to build each card
   menuItems.forEach(item => {
     const inCart = cart.find(c => c.item.id === item.id);
     const qty    = inCart ? inCart.qty : 0;
@@ -78,7 +78,6 @@ function renderMenu() {
     const card = document.createElement('div');
     card.className = 'menu-card';
     card.id = `menu-card-${item.id}`;
-
     card.innerHTML = `
       <div class="menu-emoji">${item.emoji}</div>
       <div class="menu-name">${item.name}</div>
@@ -95,21 +94,16 @@ function renderMenu() {
         }
       </div>
     `;
-
     menuGrid.appendChild(card);
   });
 }
 
 /* ─────────────────────────────────────────────
-   5. CART FUNCTIONS
+   6. CART FUNCTIONS
 ───────────────────────────────────────────── */
-
-/**
- * addToCart — adds an item to cart array or increments qty
- */
 function addToCart(itemId) {
-  const item    = menuItems.find(m => m.id === itemId);
-  const inCart  = cart.find(c => c.item.id === itemId);
+  const item   = menuItems.find(m => m.id === itemId);
+  const inCart = cart.find(c => c.item.id === itemId);
 
   if (inCart) {
     inCart.qty++;
@@ -122,16 +116,12 @@ function addToCart(itemId) {
   animateCartBadge();
 }
 
-/**
- * changeQty — increases or decreases qty; removes if qty hits 0
- */
 function changeQty(itemId, delta) {
   const index = cart.findIndex(c => c.item.id === itemId);
   if (index === -1) return;
 
   cart[index].qty += delta;
 
-  // Remove from cart if qty drops to 0
   if (cart[index].qty <= 0) {
     cart.splice(index, 1);
   }
@@ -140,28 +130,19 @@ function changeQty(itemId, delta) {
   renderMenu();
 }
 
-/**
- * removeFromCart — removes an item entirely
- */
 function removeFromCart(itemId) {
   cart = cart.filter(c => c.item.id !== itemId);
   updateCart();
   renderMenu();
 }
 
-/**
- * updateCart — recalculates totals and re-renders the cart UI
- */
 function updateCart() {
-  // Calculate subtotal using a reduce loop
   const subtotal = cart.reduce((sum, c) => sum + c.item.price * c.qty, 0);
   orderTotal = subtotal + DELIVERY_FEE;
 
-  // Update badge count
   const totalItems = cart.reduce((sum, c) => sum + c.qty, 0);
   cartBadge.textContent = totalItems;
 
-  // Show/hide empty state and summary
   if (cart.length === 0) {
     cartEmpty.classList.remove('hidden');
     cartSummary.classList.add('hidden');
@@ -172,11 +153,9 @@ function updateCart() {
   cartEmpty.classList.add('hidden');
   cartSummary.classList.remove('hidden');
 
-  // Update price displays
   subtotalEl.textContent = `₦${subtotal.toLocaleString()}`;
   totalEl.textContent    = `₦${orderTotal.toLocaleString()}`;
 
-  // Render cart items using a loop
   cartList.innerHTML = '';
   cart.forEach(c => {
     const li = document.createElement('li');
@@ -193,9 +172,6 @@ function updateCart() {
   });
 }
 
-/**
- * animateCartBadge — bounces the cart icon on add
- */
 function animateCartBadge() {
   cartBadge.style.transform = 'scale(1.5)';
   setTimeout(() => { cartBadge.style.transform = ''; }, 200);
@@ -206,41 +182,157 @@ function scrollToCart() {
 }
 
 /* ─────────────────────────────────────────────
-   6. PLACE ORDER — switch to tracking screen
+   7. PAYSTACK PAYMENT FLOW
 ───────────────────────────────────────────── */
-function placeOrder() {
+
+/**
+ * initiatePayment — called when user clicks "Place Order & Pay"
+ * Opens the Paystack popup with order details
+ */
+function initiatePayment() {
   if (cart.length === 0) return;
 
-  // Pick a random delivery time between 20–45 minutes
-  const mins     = Math.floor(Math.random() * 26) + 20;
-  totalSeconds   = mins * 60;
-  secondsLeft    = totalSeconds;
-  currentStage   = 0;
+  // Generate a unique reference for this transaction
+  const reference = 'QB_' + Date.now() + '_' + Math.floor(Math.random() * 99999);
 
-  // Populate mini order summary on tracking screen
+  // Build a readable order summary for Paystack metadata
+  const orderSummary = cart.map(c => `${c.item.name} x${c.qty}`).join(', ');
+
+  // Paystack requires amount in KOBO (multiply naira by 100)
+  const amountInKobo = orderTotal * 100;
+
+  const handler = PaystackPop.setup({
+    key:       PAYSTACK_PUBLIC_KEY,
+    email:     CUSTOMER_EMAIL,
+    amount:    amountInKobo,
+    currency:  'NGN',
+    ref:       reference,
+    firstname: CUSTOMER_NAME,
+    phone:     CUSTOMER_PHONE,
+
+    metadata: {
+      custom_fields: [
+        {
+          display_name:  'Order Details',
+          variable_name: 'order_details',
+          value:         orderSummary,
+        },
+        {
+          display_name:  'Delivery Fee',
+          variable_name: 'delivery_fee',
+          value:         `₦${DELIVERY_FEE.toLocaleString()}`,
+        },
+        {
+          display_name:  'Restaurant',
+          variable_name: 'restaurant',
+          value:         "Legend's Kitchen",
+        },
+      ],
+    },
+
+    // ── Payment successful ──
+    callback: function (response) {
+      onPaymentSuccess(response);
+    },
+
+    // ── Payment popup closed / cancelled ──
+    onClose: function () {
+      onPaymentCancelled();
+    },
+  });
+
+  handler.openIframe();
+}
+
+/**
+ * onPaymentSuccess — fired when Paystack confirms payment
+ * Shows processing overlay briefly, then starts the tracking screen
+ */
+function onPaymentSuccess(response) {
+  // Show the processing overlay while we "verify"
+  payOverlay.classList.remove('hidden');
+
+  // Simulate a brief server-side verification delay (1.5s)
+  setTimeout(() => {
+    payOverlay.classList.add('hidden');
+
+    // Show the green success toast
+    showPayToast(`✅ Payment confirmed! Ref: ${response.reference}`, 'success');
+
+    // After the toast shows briefly, launch the tracking screen
+    setTimeout(() => {
+      startDeliveryTracking();
+    }, 1800);
+  }, 1500);
+}
+
+/**
+ * onPaymentCancelled — fired when user closes the Paystack popup
+ */
+function onPaymentCancelled() {
+  showPayToast('❌ Payment cancelled. Your cart is still saved.', 'cancelled');
+}
+
+/**
+ * showPayToast — shows a bottom toast notification
+ */
+function showPayToast(message, type) {
+  payToastMsg.textContent = message;
+  payToast.className      = 'pay-toast';
+
+  if (type === 'cancelled') {
+    payToast.classList.add('cancelled');
+  }
+
+  // Animate in
+  requestAnimationFrame(() => {
+    payToast.classList.remove('hidden');
+    requestAnimationFrame(() => payToast.classList.add('show'));
+  });
+
+  // Animate out after 4 seconds
+  setTimeout(() => {
+    payToast.classList.remove('show');
+    setTimeout(() => payToast.classList.add('hidden'), 300);
+  }, 4000);
+}
+
+/* ─────────────────────────────────────────────
+   8. START DELIVERY TRACKING
+   (previously placeOrder — now called AFTER payment)
+───────────────────────────────────────────── */
+function startDeliveryTracking() {
+  // Random delivery time: 20–45 minutes
+  const mins    = Math.floor(Math.random() * 26) + 20;
+  totalSeconds  = mins * 60;
+  secondsLeft   = totalSeconds;
+  currentStage  = 0;
+
+  // Populate mini order summary
   orderMiniList.innerHTML = '';
   cart.forEach(c => {
     const li = document.createElement('li');
     li.className = 'order-mini__item';
-    li.innerHTML = `<span>${c.item.emoji} ${c.item.name} × ${c.qty}</span><span>₦${(c.item.price * c.qty).toLocaleString()}</span>`;
+    li.innerHTML = `
+      <span>${c.item.emoji} ${c.item.name} × ${c.qty}</span>
+      <span>₦${(c.item.price * c.qty).toLocaleString()}</span>
+    `;
     orderMiniList.appendChild(li);
   });
   orderMiniTotal.textContent = `₦${orderTotal.toLocaleString()}`;
 
-  // Switch screens
+  // Switch to tracking screen
   screenMenu.classList.add('hidden');
   screenTracking.classList.remove('hidden');
   window.scrollTo(0, 0);
 
-  // Activate first stage immediately
+  // Activate first stage and start timer
   activateStage(0);
-
-  // Start the countdown timer
   startTimer();
 }
 
 /* ─────────────────────────────────────────────
-   7. COUNTDOWN TIMER
+   9. COUNTDOWN TIMER
 ───────────────────────────────────────────── */
 function startTimer() {
   clearInterval(timerInterval);
@@ -263,9 +355,6 @@ function startTimer() {
   }, 1000);
 }
 
-/**
- * updateTimerDisplay — formats and shows MM:SS
- */
 function updateTimerDisplay() {
   const m = Math.floor(secondsLeft / 60);
   const s = secondsLeft % 60;
@@ -273,7 +362,6 @@ function updateTimerDisplay() {
   timerMins.textContent = String(m).padStart(2, '0');
   timerSecs.textContent = String(s).padStart(2, '0');
 
-  // Urgent styling under 2 minutes
   if (secondsLeft <= 120 && secondsLeft > 0) {
     timerMins.classList.add('urgent');
     timerSecs.classList.add('urgent');
@@ -286,13 +374,12 @@ function updateTimerDisplay() {
 }
 
 /* ─────────────────────────────────────────────
-   8. STAGE PROGRESSION (using conditions)
+   10. STAGE PROGRESSION
 ───────────────────────────────────────────── */
 function checkStageProgress() {
   const elapsed    = totalSeconds - secondsLeft;
   const elapsedPct = (elapsed / totalSeconds) * 100;
 
-  // Check each stage trigger using conditions
   if (elapsedPct >= 20 && currentStage < 1) {
     activateStage(1);
   } else if (elapsedPct >= 55 && currentStage < 2) {
@@ -304,7 +391,6 @@ function activateStage(index) {
   currentStage = index;
   const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-  // Loop through all stages to set correct classes
   for (let i = 0; i <= 3; i++) {
     const el = document.getElementById(`stage-${i}`);
     el.classList.remove('active', 'done');
@@ -317,9 +403,8 @@ function activateStage(index) {
     }
   }
 
-  // Update header subtitle
   const subtitles = [
-    "Mama's Kitchen has received your order",
+    "Legend's Kitchen has received your order",
     "Your food is being freshly prepared 👨‍🍳",
     "Your rider is heading to you 🛵",
     "Your food has arrived! 🎉",
@@ -328,35 +413,28 @@ function activateStage(index) {
 }
 
 /* ─────────────────────────────────────────────
-   9. RIDER MAP ANIMATION
+   11. RIDER MAP ANIMATION
 ───────────────────────────────────────────── */
 function updateRiderPosition() {
-  // Progress from 15% (restaurant) to 82% (home) across the map
   const elapsed  = totalSeconds - secondsLeft;
   const progress = elapsed / totalSeconds;
   const startX   = 15;
   const endX     = 82;
   const currentX = startX + (endX - startX) * progress;
-
   mapRider.style.left = currentX + '%';
 }
 
 /* ─────────────────────────────────────────────
-   10. ORDER ARRIVED
+   12. ORDER ARRIVED
 ───────────────────────────────────────────── */
 function orderArrived() {
-  // Activate final stage
   activateStage(3);
-
-  // Update header
   confirmedTitle.textContent = 'Food Delivered! 🎉';
 
-  // Build arrived items list
   arrivedItems.innerHTML = cart.map(c =>
     `${c.item.emoji} ${c.item.name} × ${c.qty}`
   ).join('<br/>');
 
-  // Show arrived overlay
   setTimeout(() => {
     arrivedOverlay.classList.remove('hidden');
     launchConfetti();
@@ -364,32 +442,28 @@ function orderArrived() {
 }
 
 /* ─────────────────────────────────────────────
-   11. NEW ORDER — reset everything
+   13. NEW ORDER — full reset
 ───────────────────────────────────────────── */
 function newOrder() {
-  // Reset state
-  cart          = [];
-  totalSeconds  = 0;
-  secondsLeft   = 0;
-  currentStage  = 0;
+  cart         = [];
+  totalSeconds = 0;
+  secondsLeft  = 0;
+  currentStage = 0;
   clearInterval(timerInterval);
 
-  // Reset UI
   arrivedOverlay.classList.add('hidden');
-  cartList.innerHTML = '';
+  cartList.innerHTML    = '';
   cartBadge.textContent = '0';
   timerMins.textContent = '00';
   timerSecs.textContent = '00';
-  mapRider.style.left = '15%';
+  mapRider.style.left   = '15%';
 
-  // Reset stage dots
   for (let i = 0; i <= 3; i++) {
     const el = document.getElementById(`stage-${i}`);
     el.classList.remove('active', 'done');
     document.getElementById(`stage-time-${i}`).textContent = '';
   }
 
-  // Switch back to menu
   screenTracking.classList.add('hidden');
   screenMenu.classList.remove('hidden');
   window.scrollTo(0, 0);
@@ -399,12 +473,11 @@ function newOrder() {
 }
 
 /* ─────────────────────────────────────────────
-   12. CONFETTI
+   14. CONFETTI
 ───────────────────────────────────────────── */
 const cCtx = confettiCanvas.getContext('2d');
-let confettis = [];
+let confettis      = [];
 let confettiRunning = false;
-
 const CONFETTI_COLORS = ['#ff6b2b', '#ffd166', '#00c48c', '#f0eee8', '#a78bfa', '#ff6b6b'];
 
 function resizeCanvas() {
@@ -416,18 +489,17 @@ function launchConfetti() {
   resizeCanvas();
   confettis = [];
 
-  // Loop to create confetti pieces
   for (let i = 0; i < 120; i++) {
     confettis.push({
-      x:      Math.random() * confettiCanvas.width,
-      y:      -20 - Math.random() * 200,
-      w:      Math.random() * 10 + 4,
-      h:      Math.random() * 5 + 2,
-      color:  CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-      speedY: Math.random() * 4 + 2,
-      speedX: (Math.random() - 0.5) * 3,
-      angle:  Math.random() * Math.PI * 2,
-      spin:   (Math.random() - 0.5) * 0.2,
+      x:       Math.random() * confettiCanvas.width,
+      y:       -20 - Math.random() * 200,
+      w:       Math.random() * 10 + 4,
+      h:       Math.random() * 5 + 2,
+      color:   CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+      speedY:  Math.random() * 4 + 2,
+      speedX:  (Math.random() - 0.5) * 3,
+      angle:   Math.random() * Math.PI * 2,
+      spin:    (Math.random() - 0.5) * 0.2,
       opacity: 1,
     });
   }
@@ -444,7 +516,7 @@ function animateConfetti() {
 
   confettis.forEach(p => {
     if (p.y < confettiCanvas.height + 20) {
-      allDone  = false;
+      allDone   = false;
       p.y      += p.speedY;
       p.x      += p.speedX;
       p.angle  += p.spin;
@@ -471,7 +543,7 @@ function animateConfetti() {
 window.addEventListener('resize', resizeCanvas);
 
 /* ─────────────────────────────────────────────
-   13. INIT
+   15. INIT
 ───────────────────────────────────────────── */
 resizeCanvas();
 renderMenu();
